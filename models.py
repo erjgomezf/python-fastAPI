@@ -13,19 +13,22 @@ class CustomerBase(SQLModel):
 class  CustomerCreate(CustomerBase):    
     pass
 
+class  CustomerUpdate(CustomerBase):    
+    pass
+
 class Customer(CustomerBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
 
 class Transaction(BaseModel):
-    id: int | None 
-    amount: int | None
-    description: str
+    id: int | None = Field(default=None, primary_key=True)
+    amount: int | None = Field(default=None)
+    description: str | None = Field(default=None)
 
 class Invoice(BaseModel):
-    id: int | None 
+    id: int | None = Field(default=None, primary_key=True)
     customer: Customer
     transaction: list[Transaction]
-    total: int | None
+    total: int | None = Field(default=None)
 
     @property
     def total_amount(self) -> int:

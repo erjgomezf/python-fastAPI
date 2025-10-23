@@ -1,139 +1,122 @@
-# GEMINI.md — Evolving Guide for AI Assistants (Django REST Framework Course)
+# Contexto para Gemini (Asistente de Código)
 
-**Status:** Live / Incremental. This document instructs any AI agent on HOW to productively interact in this repository, which is geared towards the practical learning of Django REST Framework (DRF). Keep it concrete, actionable, and free of generic template noise.
+Este documento proporciona a Gemini el contexto esencial sobre el proyecto actual, permitiéndole ofrecer asistencia más precisa, relevante y alineada con nuestras convenciones.
 
-## 1. Purpose and Scope
+---
 
-This repository serves as an educational sandbox for building REST APIs with Django + DRF, applying clean design principles (SOLID, separation of layers, and explicit contracts). All contributions from the agent must:
+## 1. Propósito del Proyecto
 
-- Accelerate learning (briefly explain decisions when introducing something new).
-- Maintain architectural and stylistic consistency.
-- Avoid introducing complexity without a current or imminent use case.
+**Nombre:** API de Gestión de Cursos (Educativa)
+**Objetivo:** Construir una API RESTful simple con Python, Django y Django REST Framework (DRF) para gestionar una lista de cursos. El propósito es aprender y aplicar buenas prácticas de desarrollo de backend.
 
-## 2. Architectural Overview (Expected)
+---
 
-- **Core:** Django (configuration in `settings.py`), DRF for the API presentation layer.
-- **Typical App Domain:** `models.py` (persistence), `serializers.py` (transformation/validation), `views.py` or `viewsets.py` (endpoints), `urls.py` (local routing), global registration in `project/urls.py` via `routers.DefaultRouter`.
-- **Filters:** Use `django-filter` integrated into ViewSets (`filterset_fields` attribute or `FilterSet` classes).
-- **Pagination:** Centralized in `REST_FRAMEWORK` of `settings.py` (do not redefine per endpoint unless justified).
-- **Authentication/Permissions:** Use standard DRF classes (e.g., `IsAuthenticated`) before creating custom permissions.
+## 2. Stack Tecnológico Principal
 
-## 3. Key Patterns and Decisions
+- **Lenguaje:** Python 3.11+
+- **Framework Backend:** Django, FastAPI
+- **Framework API:** Django REST Framework (DRF)
+- **Base de Datos:** SQLite (para desarrollo), PostgreSQL (para producción)
+- **Gestor de Paquetes:** `pip` con `requirements.txt`
+- **Formateador de Código:** `black`
+- **Linter:** (Aún no definido, pero se usará uno como Flake8 o Ruff en el futuro)
 
-- Prefer ViewSets + Routers over manual functions or APIViews for standard CRUD.
-- Add business logic outside of serializers when it exceeds validation (create a service/helper before bloating a serializer).
-- Avoid domain logic in signals if it can be expressed explicitly in transactional services.
-- **Suggested order when creating new functionality:**
-  1. Define the model (if missing).
-  2. Minimum serializer.
-  3. ViewSet + route.
-  4. Tests (list + creation + detail + error).
-  5. Refine (filters, pagination, permissions, brief documentation).
+---
 
-## 4. Code Standards and Style
+## 3. Estructura del Proyecto (Django)
 
-- **Language:** Spanish in comments/docstrings; English allowed only for widely accepted technical names.
-- **Formatting:** Run `black .` before finalizing substantial changes.
-- **Docstrings:** Use a structured format with `*` for sections (e.g., `* Atributos:`) and `-` for list items, following the project's style.
-- **Typing:** Add type hints (minimum in public signatures). Do not force obvious redundant typing (`def save(self) -> None:` is acceptable; do not type trivial duplicate attributes).
-- **Imports:** Group (stdlib / third-party / local). Avoid wildcards.
-- **Templates:** Wrap `{{ ... }}` expressions within HTML tags to mitigate formatting conflicts.
+El proyecto sigue la estructura estándar de Django:
 
-## 5. Operational Workflow (for the Agent)
+```
+proyecto_drf/
+├── manage.py
+├── proyecto_drf/         # Directorio de configuración del proyecto
+│   ├── __init__.py
+│   ├── settings.py
+│   ├── urls.py
+│   └── ...
+├── cursos/               # App de Django para gestionar cursos
+│   ├── __init__.py
+│   ├── admin.py
+│   ├── apps.py
+│   ├── models.py
+│   ├── serializers.py    # <-- Lógica de serialización aquí
+│   ├── tests.py
+│   ├── urls.py           # <-- Rutas específicas de la app
+│   └── views.py          # <-- Lógica de las vistas (ViewSets)
+└── requirements.txt
+```
 
-1. **Contextual Reading:** Review `requirements.txt`, `settings.py`, `urls.py`, and files of the target app before proposing changes.
-2. **Planning:** For non-trivial tasks, formulate a clear plan and share it if it aids understanding.
-3. **Execution:** Use the available tools to implement the plan, adhering to project conventions.
-4. **Verification:** After editing executable code, validate with formatting, existing tests, and a quick server startup if applicable. I will use `black .` for formatting and run tests to ensure changes are safe.
+**Convenciones Clave:**
 
-## 6. Communication
+- **Lógica de Negocio:** Principalmente en `views.py` y `serializers.py`.
+- **Modelos:** Definidos en `models.py`.
+- **Rutas:** Las rutas de la API se definen en `cursos/urls.py` y se incluyen en `proyecto_drf/urls.py`.
+- **Serializers:** Usamos `ModelSerializer` de DRF para la conversión de datos.
 
-- I will be concise and direct.
-- I will explain my actions and the reasoning behind them, especially when introducing new patterns.
-- I will ask for clarification when a request is ambiguous or lacks critical information.
+---
 
-## 7. Testing (Pedagogical Approach)
+## 4. Estructura de Proyectos con FastAPI
 
-- Add minimum representative tests (happy path + 1 error). Avoid massive suites if not yet justified.
-- Initial priority: CRUD endpoints (status codes, response structure, basic validations).
-- If no tests exist yet, suggest a `tests/` folder and create a first `tests/test_<resource>.py` file with an example.
+Para mantener un proyecto FastAPI organizado, escalable y fácil de mantener, se recomienda una estructura modular que separe las responsabilidades. El uso de `APIRouter` es clave para dividir la lógica de negocio en componentes más pequeños.
 
-## 8. Data Handling and Validation
+### 4.1. Árbol de Archivos Recomendado
 
-- **Simple Validations:** In serializers (`validate_<field>` or `validate`).
-- **Cross-cutting/Compositional Validations:** Separate service method (`services/<name>.py`).
-- **Avoid "God Serializers":** When validation becomes bloated, extract rules into pure, testable functions.
+```
+/
+├── app/
+│   ├── __init__.py
+│   ├── main.py
+│   ├── dependencies.py
+│   └── routers/
+│       ├── __init__.py
+│       ├── customer.py
+│       ├── invoices.py
+│       └── transactions.py
+├── models.py
+├── db.py
+└── requirements.txt
+```
 
-## 9. Errors and API Responses
+### 4.2. Descripción de Componentes
 
-- Use semantic HTTP codes (`400` validation, `404` not found, `403` permission, `409` logical conflict, `500` unexpected unhandled).
-- Do not create arbitrary JSON wrappers ("success", "data") unless the project defines a global standard.
+- **`app/`**: Directorio principal que contiene la lógica de la aplicación.
+  - **`main.py`**: Punto de entrada de la aplicación. Aquí se crea la instancia principal de `FastAPI` y se incluyen los routers de las diferentes áreas de la aplicación.
+  - **`dependencies.py`**: Define dependencias comunes que se pueden inyectar en diferentes partes de la aplicación.
+  - **`routers/`**: Directorio que agrupa los diferentes `APIRouter`. Cada archivo representa un conjunto de endpoints relacionados con una entidad de negocio.
+- **`models.py`**: Define los modelos de datos de la aplicación (Pydantic, SQLModel, etc.).
+- **`db.py`**: Contiene la configuración y la lógica para la conexión a la base de datos.
+- **`requirements.txt`**: Lista de las dependencias de Python del proyecto.
 
-## 10. Filtering, Ordering, and Pagination
+---
 
-- **Declarative Filters:** Via `filterset_fields = ["field"]` or a dedicated `FilterSet` if logic scales.
-- **Ordering:** Allow `ordering` param if it adds value; document safe fields.
-- **Pagination:** Centralized; change at the view level only with explicit justification (e.g., public feed vs. internal panel).
+## 5. Objetivos y Tareas Actuales
 
-## 11. Security and Best Practices
+Actualmente, estoy enfocado en:
 
-- Do not expose sensitive data (tokens, passwords) in logs/responses.
-- Before introducing new dependencies: justify (benefit > cognitive cost).
-- No hardcoded credentials; use `.env` (if added, document minimum required keys).
+1.  **Construir el CRUD completo para el recurso `Curso`.**
+2.  **Aprender a usar `ViewSet` y `Router` de DRF para simplificar las vistas.**
+3.  **Implementar filtros básicos para la lista de cursos.**
+4.  **Añadir documentación automática a la API.**
+5.  **Configurar un entorno de desarrollo robusto y replicable.**
 
-## 12. Performance (Initial Threshold)
+---
 
-- Major optimization only after detecting a real need (repetitive queries, obvious N+1). Suggest `select_related` / `prefetch_related` when appropriate.
-- Avoid premature caching; if mentioned, propose it as an "optional next step."
+## 6. Estilo de Código y Preferencias
 
-## 13. Communication and Clarifications
+- **Formato:** Adherencia estricta a `black`. Por favor, genera código que ya esté formateado con `black`.
+- **Tipado:** Uso de `type hints` de Python siempre que sea posible para mejorar la claridad y la robustez.
+- **Commits:** Mensajes de commit claros y concisos, en español, siguiendo el formato convencional (`feat:`, `fix:`, `docs:`, etc.).
+- **Idioma:** Prefiero que la comunicación, los comentarios y la documentación estén en **español**.
 
-- If essential context is missing, I will state my assumptions and proceed. If the risk is high, I will ask for clarification.
-- I will avoid rhetorical questions; every question should unlock a clear decision.
+---
 
-## 14. DO / DON'T
+## 7. Cómo Puedes Ayudarme Mejor
 
-**DO:**
+- **Genera código idiomático:** Proporciona ejemplos que sigan las mejores prácticas de Python y Django/DRF/FastAPI.
+- **Explica el "porqué":** Cuando sugieras un cambio o una nueva biblioteca, explica brevemente por qué es una buena idea.
+- **Ayúdame a refactorizar:** Si ves una oportunidad para mejorar el código existente (simplificarlo, hacerlo más legible, etc.), no dudes en sugerirlo.
+- **Piensa en los tests:** Aunque no siempre los pida explícitamente, ten en mente cómo se podría probar el código que generas.
+- **Respeta las convenciones:** Usa la estructura y las convenciones definidas en este documento.
 
-- Briefly explain when you introduce a new abstraction.
-- Keep changes scoped to the stated objective.
-- Suggest safe micro-improvements (add type hints, brief docstring, minimum test) after fulfilling the main requirement.
-
-**DON'T:**
-
-- Rewrite entire files unnecessarily.
-- Introduce external frameworks for trivial tasks.
-- Create unsolicited endpoints.
-
-## 15. Evolution of This Document
-
-- Add new sections only when a repeated pattern or recurring friction emerges.
-- Keep the focus: interaction guide + current architectural decisions; do not turn it into an extensive theoretical manual.
-
-## 16. Quick Template for New Resource Creation
-
-1. Model (if applicable).
-2. Minimum serializer (explicit fields).
-3. ViewSet (`ModelViewSet` if full CRUD).
-4. Router (`router.register("resource", ResourceViewSet)`).
-5. Basic test (list + create + validation error).
-6. Add filters and permissions if applicable.
-7. Review/refactor.
-
-## 17. Suggested Commit Structure
-
-Message in Spanish, imperative mood: `Añade ViewSet de Curso con filtros básicos`.
-If it includes an educational breaking change, add a note: `BREAKING: cambia nombre de campo '...'`.
-
-## 18. Mental Tools for the Course
-
-- "Less is more": implement the minimum demonstrable first.
-- "Extract before duplicating big": if you repeat a block ≥3 times, factorize.
-- "Errors speak": use the first failing test as a compass before refactoring further.
-
-## 19. Local References
-
-- `requirements.txt`: base dependencies.
-- `GEMINI.md` (root): this document.
-
---- End of version 2025-10-13 ---
+---

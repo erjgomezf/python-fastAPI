@@ -484,6 +484,46 @@ serializer.save()
 - **Ver logs:** `docker-compose logs`
 - **Entrar a un contenedor:** `docker-compose exec <nombre-servicio> bash`
 
+### SQL-Lite
+
+> En fastAPI para crear las tablas (db.py)
+
+```python
+from typing import Annotated
+from fastapi import Depends, FastAPI
+from sqlmodel import Session, create_engine, SQLModel
+
+sqlite_name = "db.sqlite3" # SQLite database file
+sqlite_url = f"sqlite:///{sqlite_name}" # URL for SQLite database
+
+
+engine = create_engine(sqlite_url) # Crear el motor de la base de datos
+
+def create_all_tables(app: FastAPI):
+    '''
+    Crear todas las tablas en la base de datos.
+    Parámetros:
+    - app: La instancia de FastAPI.
+    Retorna:
+    - None
+    '''
+    SQLModel.metadata.create_all(engine)
+    yield
+
+def get_session():
+    '''
+    Obtener una sesión de base de datos.
+    Retorna:
+    - Una sesión de base de datos.
+    '''
+    with Session(engine) as session:
+        yield session
+
+SessionDep = Annotated[Session, Depends(get_session)] # Dependencia para obtener la sesión de base de datos
+```
+
+- **Para entrar en la base de datos**: `sqlite3 db.sqlite3`
+
 ---
 
 ## Apéndice B: Catálogo de Patrones de Diseño
@@ -608,3 +648,111 @@ class SubirArchivoView(APIView):
 Al aplicar estas políticas, si un usuario excede el límite de peticiones, recibirá una respuesta `HTTP 429 Too Many Requests` con un mensaje indicando cuándo podrá volver a realizar una petición.
 
 ---
+
+## 19. Estructura de Proyectos con FastAPI
+
+Para mantener un proyecto FastAPI organizado, escalable y fácil de mantener, se recomienda una estructura modular que separe las responsabilidades. El uso de `APIRouter` es clave para dividir la lógica de negocio en componentes más pequeños.
+
+### 19.1. Árbol de Archivos Recomendado
+
+```txt
+/
+├── app/
+│   ├── __init__.py
+│   ├── main.py
+│   ├── dependencies.py
+│   └── routers/
+│       ├── __init__.py
+│       ├── customer.py
+│       ├── invoices.py
+│       └── transactions.py
+├── models.py
+├── db.py
+└── requirements.txt
+```
+
+### 19.2. Descripción de Componentes
+
+- **`app/`**: Directorio principal que contiene la lógica de la aplicación.
+
+  - **`main.py`**: Punto de entrada de la aplicación. Aquí se crea la instancia principal de `FastAPI` y se incluyen los routers de las diferentes áreas de la aplicación.
+
+    ```python
+    # app/main.py
+    from fastapi import FastAPI
+    from .routers import customer, invoices
+
+    app = FastAPI()
+
+    app.include_router(customer.router)
+    app.include_router(invoices.router)
+
+    @app.get("/")
+    def read_root():
+        return {"Hello": "World"}
+    ```
+
+  - **`dependencies.py`**: Define dependencias comunes que se pueden inyectar en diferentes partes de la aplicación, como la obtención de la sesión de la base de datos o la autenticación de usuarios.
+  - **`routers/`**: Directorio que agrupa los diferentes `APIRouter`. Cada archivo representa un conjunto de endpoints relacionados con una entidad de negocio.
+
+    - **`customer.py`**: Define los endpoints para la gestión de clientes.
+
+      ```python
+      # app/routers/customer.py
+      from fastapi import APIRouter
+
+      router = APIRouter(
+          prefix="/customers",
+          tags=["customers"],
+      )
+
+      @router.get("/")
+      def read_customers():
+          return [{"customer_id": 1, "name": "John Doe"}]
+      ```
+
+- **`models.py`**: Define los modelos de datos de la aplicación, generalmente utilizando Pydantic para la validación de datos o SQLModel/SQLAlchemy para la definición de tablas de la base de datos.
+- **`db.py`**: Contiene la configuración y la lógica para la conexión a la base de datos.
+- **`requirements.txt`**: Lista de las dependencias de Python del proyecto.
+
+## 20. Estructura de Proyectos con Django y DRF
+
+La estructura de un proyecto Django está diseñada para mantener una clara separación de responsabilidades, facilitando el desarrollo y mantenimiento de aplicaciones complejas.
+
+### 20.1. Árbol de Archivos Recomendado
+
+```txt
+/
+├── manage.py
+├── requirements.txt
+├── project_name/         # Directorio de configuración del proyecto
+│   ├── __init__.py
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+└── app_name/               # App de Django para una funcionalidad específica
+    ├── __init__.py
+    ├── admin.py
+    ├── apps.py
+    ├── models.py
+    ├── serializers.py
+    ├── tests.py
+    ├── urls.py
+    └── views.py
+```
+
+### 20.2. Descripción de Componentes
+
+- **`manage.py`**: Utilidad de línea de comandos para interactuar con el proyecto Django (ej. `runserver`, `makemigrations`).
+- **`requirements.txt`**: Lista de las dependencias de Python del proyecto.
+- **`project_name/`**: Directorio de configuración del proyecto.
+  - **`settings.py`**: Contiene la configuración del proyecto, como la base de datos, las aplicaciones instaladas y las variables de entorno.
+  - **`urls.py`**: Archivo principal de enrutamiento del proyecto. Incluye las rutas de las diferentes aplicaciones.
+- **`app_name/`**: Directorio que representa una aplicación de Django. Cada aplicación es un módulo de Python que se encarga de una funcionalidad específica.
+  - **`models.py`**: Define los modelos de la base de datos de la aplicación utilizando el ORM de Django.
+  - **`serializers.py`**: Define los serializadores de Django REST Framework para convertir los modelos de Django en representaciones como JSON.
+  - **`views.py`**: Contiene la lógica de negocio de la aplicación. Aquí se definen las vistas (basadas en funciones o clases) o ViewSets que manejan las peticiones HTTP.
+  - **`urls.py`**: Define las rutas específicas de la aplicación, que luego se incluyen en el archivo `urls.py` principal del proyecto.
+  - **`admin.py`**: Permite registrar los modelos de la aplicación en el panel de administración de Django.
+  - **`apps.py`**: Archivo de configuración de la aplicación.
+  - **`tests.py`**: Contiene los tests para la aplicación.

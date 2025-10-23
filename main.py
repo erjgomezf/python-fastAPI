@@ -1,14 +1,14 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from db import SessionDep, create_all_tables
 
-from models import Customer, Transaction, Invoice, CustomerCreate
+from models import Customer, Transaction, Invoice, CustomerCreate, CustomerUpdate
 from sqlmodel import select
     
 # Crear la aplicación FastAPI
-app = FastAPI(lifespan=create_all_tables)
+app = FastAPI(lifespan=create_all_tables) # Usar la función create_all_tables al iniciar la aplicación
 
 @app.get("/")
 async def root():
@@ -79,28 +79,90 @@ async def time_format(time_format: str) -> dict:
     
 db_customers: list[Customer] = []
 
+# Crear un cliente
 @app.post("/customers/", response_model=Customer)
-async def create_customer(customer_data: CustomerCreate, session: SessionDep):
+async def create_customer(customer_data: CustomerCreate, session: SessionDep) -> Customer:
+    '''
+    Crea un nuevo cliente en la base de datos.
+    * Parámetros:
+        - customer_data: Los datos del cliente a crear.
+    * Retorna:
+        - El cliente creado.
+    '''
     customer = Customer.model_validate(customer_data.model_dump()) # Convertir CustomerCreate a Customer en formato dict
     session.add(customer) # Agregar el nuevo cliente a la sesión
     session.commit() # Guardar los cambios en la base de datos
     session.refresh(customer) # Refrescar el objeto cliente para obtener los datos actualizados
-    #Asumieendo que el id no se genera automáticamente (SIN BASE DE DATOS)
-    #customer.id = len(db_customers) +1
-    #db_customers.append(customer)
     return customer
 
+# Listar todos los clientes
 @app.get("/customers/", response_model=list[Customer])
-async def list_customers(session: SessionDep):
-    return session.exec(select(Customer)).all()
+async def list_customers(session: SessionDep) -> list[Customer]:
+    '''
+    Retorna una lista de todos los clientes en la base de datos.
+    * Parámetros:
+        - session: La sesión de base de datos.
+    * Retorna:
+        - Una lista de clientes.
+    '''
+    customers_db = session.exec(select(Customer)).all()
+    if len(customers_db) == 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No se encontraron clientes")
+    return customers_db
 
-# retornar un cliente por su ID RETO PENDIENTE
-@app.get("/customers/{customer_id}", response_model=Customer)
-async def get_customer(customer_id: int):
-    for customer in db_customers:
-        if customer.id == customer_id:
-            return customer
-    raise HTTPException(status_code=404, detail="Customer not found")
+# retornar un cliente por su ID 
+@app.get("/read_customers/{customer_id}", response_model=Customer)
+async def get_customer(customer_id: int, session: SessionDep) -> Customer:
+    '''
+    Retorna un cliente por su ID.
+    * Parámetros:
+        - customer_id: El ID del cliente a retornar.
+    * Retorna:
+        - El cliente con el ID especificado.
+    '''
+    customer_db = session.get(Customer, customer_id)
+    if not customer_db:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Cliente con ID {customer_id} no encontrado")
+    return customer_db
+
+# eliminar un cliente por su ID
+@app.delete("/delete_customers/{customer_id}")
+async def delete_customer(customer_id: int, session: SessionDep) -> dict:
+    '''
+    Elimina un cliente por su ID.
+    * Parámetros:
+        - customer_id: El ID del cliente a eliminar.
+    * Retorna:
+        - Un mensaje de éxito.
+    '''
+    customer_db = session.get(Customer, customer_id)
+    if not customer_db:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Cliente con ID {customer_id} no encontrado")
+    session.delete(customer_db)
+    session.commit()
+    return {"detail":"OK"}
+
+# actualizar un cliente por su ID
+@app.patch("/update_customers/{customer_id}", response_model=Customer, status_code=status.HTTP_201_CREATED)
+async def update_customer(customer_id: int, customer_data: CustomerUpdate, session: SessionDep) -> Customer:
+    '''
+    Actualiza un cliente por su ID.
+    * Parámetros:
+        - customer_id: El ID del cliente a actualizar.
+        - customer_data: Los datos actualizados del cliente.
+    * Retorna:
+        - El cliente actualizado.
+    '''
+    customer_db = session.get(Customer, customer_id)
+    if not customer_db:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Cliente con ID {customer_id} no encontrado")
+    customer_data_dict = customer_data.model_dump(exclude_unset=True) # Convertir CustomerUpdate a dict
+    customer_db.sqlmodel_update(customer_data_dict) # Actualizar el cliente en la base de datos
+    session.add(customer_db) # Agregar el cliente actualizado a la sesión
+    session.commit() # Guardar los cambios en la base de datos
+    session.refresh(customer_db) # Refrescar el objeto cliente para obtener los datos actualizados
+    return customer_db
+
 
 @app.post("/transactions/")
 async def create_transaction(transaction_data: Transaction):
