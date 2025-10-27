@@ -162,12 +162,3 @@ async def update_customer(customer_id: int, customer_data: CustomerUpdate, sessi
     session.commit() # Guardar los cambios en la base de datos
     session.refresh(customer_db) # Refrescar el objeto cliente para obtener los datos actualizados
     return customer_db
-
-
-@app.post("/transactions/")
-async def create_transaction(transaction_data: Transaction):
-    return transaction_data
-
-@app.post("/invoices/")
-async def create_invoice(invoice_data: Invoice):
-    return invoice_data

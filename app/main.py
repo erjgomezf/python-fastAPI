@@ -4,12 +4,12 @@ from datetime import datetime
 from fastapi import FastAPI, HTTPException, status
 from models import Transaction, Invoice
 from db import create_all_tables
-from .routers import customers
-
+from .routers import customers, transactions, invoice
 
 app = FastAPI(lifespan=create_all_tables)
-app.include_router(customers.router)
-
+app.include_router(customers.router, tags=["customers"])
+app.include_router(transactions.router, prefix="/transactions", tags=["transactions"])
+app.include_router(invoice.router, prefix="/invoices", tags=["invoices"])
 
 @app.get("/")
 async def root():
@@ -77,13 +77,3 @@ async def time_format(time_format: str) -> dict:
     # Para capturar errores de formato
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al formatear la hora: {e}")
-    
-
-@app.post("/transactions")
-async def create_transation(transaction_data: Transaction):
-    return transaction_data
-
-
-@app.post("/invoices", response_model=Invoice)
-async def create_invoice(invoice_data: Invoice):
-    return invoice_data
