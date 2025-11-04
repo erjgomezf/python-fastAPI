@@ -1,7 +1,8 @@
 from zoneinfo import ZoneInfo
+import time
 from datetime import datetime
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, Request
 from models import Transaction, Invoice
 from db import create_all_tables
 from .routers import customers, transactions, invoice, plans
@@ -12,6 +13,32 @@ app.include_router(customers.router, tags=["customers"])
 app.include_router(transactions.router, prefix="/transactions", tags=["transactions"])
 app.include_router(invoice.router, prefix="/invoices", tags=["invoices"])
 app.include_router(plans.router, tags=["plans"])
+
+
+@app.middleware("http")
+async def log_request_time(request: Request, call_next) -> Request:
+    '''
+    Middleware para registrar el tiempo de procesamiento de una solicitud.
+    Parámetros:
+    - request: La solicitud entrante.
+    '''
+    star_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - star_time
+    print(f"Request: {request.url}, completed in {process_time:.4f} seconds")
+    return response
+
+@app.middleware("http")
+async def log_request_headers(request: Request, call_next) -> Request:
+    '''
+    Middleware para registrar los encabezados de la solicitud.
+    Parámetros:
+    - request: La solicitud entrante.
+    '''
+    print(f"Request headers: {request.headers}")
+    response = await call_next(request)
+    return response
+
 
 @app.get("/")
 async def root():
@@ -28,7 +55,7 @@ country_timezones = {
 
 # Mapeo de códigos ISO de países a zonas horarias
 @app.get("/time/{iso_code}")
-async def time(iso_code: str) -> str:
+async def get_time_by_iso_code(iso_code: str) -> str:
     '''
     Retorna la hora actual en la zona horaria del país especificado por su código ISO.
     Parámetros:

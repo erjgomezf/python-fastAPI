@@ -133,6 +133,13 @@ async def list_customer_plans(session: SessionDep) -> list[CustomerPlan]:
 
 @router.get("/customers/{customer_id}/plans/", response_model=list[CustomerPlan], status_code=status.HTTP_200_OK, tags=["customers"])
 async def list_customer_plans(customer_id: int, session: SessionDep, plan_status: StatusEnum = Query()) -> list[CustomerPlan]:
+    '''
+    Retorna una lista de todos los planes en la base de datos.
+    * Parámetros:
+        - customer_id; La sesión de base de datos.
+    * Retorna:
+        - Una lista de planes
+    '''
     query = (
         select(CustomerPlan)
         .where(CustomerPlan.customer_id == customer_id)

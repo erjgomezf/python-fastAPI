@@ -31,7 +31,7 @@ async def list_transaction(
     session: SessionDep,
     skip: int = Query(0, description="Registros a omitir"),
     limit: int = Query(10, description="Número de registros"),
-):
+)-> list[Transaction]:
     query = select(Transaction).offset(skip).limit(limit)
     transactions = session.exec(query).all()
     return transactions
@@ -41,7 +41,14 @@ async def list_number_transactions(
     session: SessionDep,
     registros_por_pagina: int = Query(10, description="Número de registros por pagina"),
     numero_pagina: int = Query(1, description="Número de página"),
-):
+)-> list[Transaction]:
+    '''
+    Retorna una lista de todos los clientes en la base de datos.
+    * Parámetros:
+        - session: La sesión de base de datos.
+    * Retorna:
+        - Una lista de clientes
+    '''
     transaction_db: int = session.exec(select(Transaction.id)).all()
     number_transaction : int = len(transaction_db)
     number_pages = math.ceil(number_transaction / registros_por_pagina)

@@ -18,7 +18,7 @@ def create_all_tables(app: FastAPI):
     Retorna:
     - None
     '''
-    SQLModel.metadata.create_all(engine)
+    SQLModel.metadata.create_all(engine)  
     yield
 
 def get_session():
