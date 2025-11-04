@@ -36,6 +36,7 @@ Nuestra base es el código limpio y el diseño sólido. Estos son nuestros pilar
 
 - **Propósito:** Escribir docstrings que no solo sean legibles para humanos, sino también interpretables por herramientas automáticas (como asistentes de código o generadores de documentación).
 - **Formato recomendado (estilo reStructuredText/Sphinx simplificado):**
+
   - Usar comillas triples `"""Docstring aquí"""`.
   - Una descripción breve en la primera línea.
   - Usar `*` para definir secciones claras como `* Atributos:`, `* Métodos:`, `* Parámetros:`.
@@ -49,17 +50,17 @@ Nuestra base es el código limpio y el diseño sólido. Estos son nuestros pilar
 
 ### 2.3. Convenciones de Naming en Python
 
-| Tipo        | Convención                                  | Ejemplo                   |
-| ----------- | ------------------------------------------- | ------------------------- |
-| Modelos     | Singular PascalCase                         | Curso, UsuarioPerfil      |
-| Serializers | PascalCase + Sufijo Serializer              | CursoSerializer           |
-| ViewSets    | PascalCase + Sufijo ViewSet                 | CursoViewSet              |
+| Tipo        | Convención                                  | Ejemplo                       |
+| ----------- | ------------------------------------------- | ----------------------------- |
+| Modelos     | Singular PascalCase                         | Curso, UsuarioPerfil          |
+| Serializers | PascalCase + Sufijo Serializer              | CursoSerializer               |
+| ViewSets    | PascalCase + Sufijo ViewSet                 | CursoViewSet                  |
 | Campos bool | prefijo `es_` / `tiene_` / adjetivo directo | `publicado`, `es_activo`      |
 | Rutas (URL) | plural-kebab-case                           | `cursos`, `cursos-publicados` |
-| Funciones   | snake_case descriptivo                      | `generar_token_reset`       |
-| Variables   | snake_case                                  | `nombre_de_usuario`       |
-| Constantes  | UPPER_SNAKE_CASE                            | `TASA_DE_INTERES`         |
-| Tests       | prefijo `test_` + verbo/condición            | `test_crea_curso_ok`        |
+| Funciones   | snake_case descriptivo                      | `generar_token_reset`         |
+| Variables   | snake_case                                  | `nombre_de_usuario`           |
+| Constantes  | UPPER_SNAKE_CASE                            | `TASA_DE_INTERES`             |
+| Tests       | prefijo `test_` + verbo/condición           | `test_crea_curso_ok`          |
 
 ---
 
@@ -70,6 +71,7 @@ Nuestra base es el código limpio y el diseño sólido. Estos son nuestros pilar
 Para mantener un proyecto FastAPI organizado, escalable y fácil de mantener, se recomienda una estructura modular que separe las responsabilidades. El uso de `APIRouter` es clave para dividir la lógica de negocio en componentes más pequeños.
 
 **Árbol de Archivos Recomendado:**
+
 ```txt
 /
 ├── app/
@@ -87,7 +89,9 @@ Para mantener un proyecto FastAPI organizado, escalable y fácil de mantener, se
 ```
 
 **Descripción de Componentes:**
+
 - **`app/main.py`**: Punto de entrada de la aplicación. Aquí se crea la instancia principal de `FastAPI` y se incluyen los routers.
+
   ```python
   # app/main.py
   from fastapi import FastAPI
@@ -102,8 +106,10 @@ Para mantener un proyecto FastAPI organizado, escalable y fácil de mantener, se
   def read_root():
       return {"Hello": "World"}
   ```
+
 - **`app/dependencies.py`**: Define dependencias comunes que se pueden inyectar (`Depends`), como la sesión de la base de datos.
 - **`app/routers/`**: Directorio que agrupa los `APIRouter`. Cada archivo es un conjunto de endpoints para una entidad de negocio.
+
   ```python
   # app/routers/customer.py
   from fastapi import APIRouter
@@ -117,6 +123,7 @@ Para mantener un proyecto FastAPI organizado, escalable y fácil de mantener, se
   def read_customers():
       return [{"customer_id": 1, "name": "John Doe"}]
   ```
+
 - **`models.py`**: Define los modelos de datos (Pydantic, SQLModel, SQLAlchemy).
 - **`db.py`**: Contiene la configuración y lógica para la conexión a la base de datos.
 
@@ -125,6 +132,7 @@ Para mantener un proyecto FastAPI organizado, escalable y fácil de mantener, se
 La estructura de un proyecto Django está diseñada para mantener una clara separación de responsabilidades.
 
 **Árbol de Archivos Recomendado:**
+
 ```txt
 /
 ├── manage.py
@@ -147,6 +155,7 @@ La estructura de un proyecto Django está diseñada para mantener una clara sepa
 ```
 
 **Descripción de Componentes:**
+
 - **`project_name/`**: Contiene la configuración del proyecto (`settings.py`) y el enrutador principal (`urls.py`).
 - **`app_name/`**: Una aplicación autocontenida para una funcionalidad (ej. `usuarios`, `productos`).
   - **`models.py`**: Define los modelos del ORM de Django.
@@ -213,6 +222,7 @@ urlpatterns = router.urls
 Protege tu API contra ataques de DoS y abuso.
 
 **Configuración Global en `settings.py`:**
+
 ```python
 REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_CLASSES': [
@@ -225,6 +235,7 @@ REST_FRAMEWORK = {
     }
 }
 ```
+
 Si un usuario excede el límite, recibirá una respuesta `HTTP 429 Too Many Requests`.
 
 ### 4.4. Documentación automática con `drf-spectacular`
@@ -245,6 +256,7 @@ Genera documentación OpenAPI 3.0 (Swagger UI, Redoc) a partir de tu código.
     }
     ```
 4.  En el `urls.py` del proyecto, añade las rutas para la UI:
+
     ```python
     from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
@@ -285,6 +297,44 @@ SessionDep = Annotated[Session, Depends(get_session)]
 
 ---
 
+### 5.2. Construcción de Consultas con SQLModel
+
+Para construir consultas con múltiples condiciones, SQLModel (y SQLAlchemy) ofrece una sintaxis fluida y legible.
+
+#### Encadenamiento de .where() (AND implícito)
+
+Puedes encadenar múltiples llamadas al método .where(). SQLModel las combinará automáticamente usando un operador lógico AND. Esta es la forma más común y legible para condiciones AND simples.
+
+```python
+# Buscar un CustomerPlan que pertenezca a un customer_id y tenga el estado "activo"
+query = select(CustomerPlan).where(CustomerPlan.customer_id == customer_id).where(CustomerPlan.status == "activo")
+results = session.exec(query).all()
+
+#Esto se traduce en una sentencia SQL similar a:
+WHERE customerplan.customer_id = ? AND customerplan.status = ?
+```
+
+#### Condiciones Complejas con and* y or*
+
+Para consultas que requieren una lógica más compleja, como combinar condiciones AND y OR, puedes importar y usar and* y or* directamente desde sqlmodel.
+
+```python
+from sqlmodel import select, and_, or_
+# Ejemplo con or_
+# Ejemplo con OR
+#Buscar planes que estén activos O pendientes
+query_or = select(CustomerPlan).where(or_(CustomerPlan.status == "activo", CustomerPlan.status == "pendiente"))
+
+#Ejemplo combinando and_ y or_
+# Buscar planes de un cliente específico que estén activos O pendientes
+customer_plan_db_complex = session.exec(
+    select(CustomerPlan).where(and_(CustomerPlan.customer_id == customer_id,or_(
+      CustomerPlan.status == "activo",
+      CustomerPlan.status == "pendiente")))).all()
+```
+
+---
+
 ## 6. Modelos Arquitectónicos en Python
 
 ### 6.1. Panorama y Adopción Progresiva
@@ -306,6 +356,7 @@ SessionDep = Annotated[Session, Depends(get_session)]
 ## Apéndice A: Chuleta de Comandos
 
 ### Entorno Virtual y Dependencias
+
 - **Crear entorno virtual:** `python -m venv .venv`
 - **Activar (Linux/macOS):** `source .venv/bin/activate`
 - **Activar (Windows):** `.venv\Scripts\activate`
@@ -314,6 +365,7 @@ SessionDep = Annotated[Session, Depends(get_session)]
 - **Ocultar info sensible:** `pip install python-dotenv`
 
 ### Django
+
 - **Crear proyecto:** `django-admin startproject <proyecto>`
 - **Iniciar servidor:** `python manage.py runserver`
 - **Crear aplicación:** `python manage.py startapp <nombre_app>`
@@ -325,13 +377,21 @@ SessionDep = Annotated[Session, Depends(get_session)]
 - **Desplegar estáticos:** `python manage.py collectstatic` (Asegúrate de tener `STATIC_ROOT` definido en `settings.py`).
 
 ### FastAPI
+
 - **Instalar:** `pip install "fastapi[standard]"`
 - **Ejecutar (dev):** `uvicorn main:app --reload` (donde `main` es `main.py` y `app` es la instancia de FastAPI).
-- **Ejecutar con CLI:** `fastapi dev main.py`
+- **Ejecutar con CLI:** `fastapi dev main.py` / `fastapi dev app/main.py`
 
 ### Testing
+
 - **Ejecutar pruebas con pytest:** `pytest`
 - **Ejecutar pruebas con unittest:** `python -m unittest discover tests`
 
 ### Base de Datos (SQLite)
+
 - **Entrar a la consola de SQLite:** `sqlite3 db.sqlite3`
+- **listas las tablas:** `.tables`
+- **chequear el esquema de una tabla:** `.schema <nombre_tabla>`
+- **Salir de SQLite:** `.exit`
+
+---

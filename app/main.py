@@ -4,12 +4,14 @@ from datetime import datetime
 from fastapi import FastAPI, HTTPException, status
 from models import Transaction, Invoice
 from db import create_all_tables
-from .routers import customers, transactions, invoice
+from .routers import customers, transactions, invoice, plans
+
 
 app = FastAPI(lifespan=create_all_tables)
 app.include_router(customers.router, tags=["customers"])
 app.include_router(transactions.router, prefix="/transactions", tags=["transactions"])
 app.include_router(invoice.router, prefix="/invoices", tags=["invoices"])
+app.include_router(plans.router, tags=["plans"])
 
 @app.get("/")
 async def root():

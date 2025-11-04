@@ -1,8 +1,8 @@
-from fastapi import APIRouter, status, HTTPException
+from fastapi import APIRouter, Query, status, HTTPException
 from sqlmodel import select
 
 
-from models import Customer, CustomerCreate, CustomerUpdate
+from models import Customer, CustomerCreate, CustomerUpdate, Plan, CustomerPlan, StatusEnum
 from db import SessionDep, create_all_tables
 
 # Para crear el router en APIRouter
@@ -92,3 +92,57 @@ async def update_customer(customer_id: int, customer_data: CustomerUpdate, sessi
     session.commit() # Guardar los cambios en la base de datos
     session.refresh(customer_db) # Refrescar el objeto cliente para obtener los datos actualizados
     return customer_db
+
+@router.post("/customers/{customer_id}/plans/{plan_id}/", status_code=status.HTTP_201_CREATED, tags=["customers"])
+async def subscribe_customer_to_plan(customer_id: int, plan_id: int, session: SessionDep, plan_status: StatusEnum = Query()) -> CustomerPlan:
+    '''
+    Suscribe un cliente a un plan.
+    * Parámetros:
+        - `customer_id`: El ID del cliente.
+        - `plan_id`: El ID del plan.
+    * Retorna:
+        - El objeto `CustomerPlan` que representa la nueva suscripción.
+    '''
+    customer_db = session.get(Customer, customer_id)
+    plan_db = session.get(Plan, plan_id)
+    
+    if not customer_db or not plan_db:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cliente o plan no encontrado")
+    
+    # Añadir el plan a la lista de planes del cliente
+    customer_plan_db = CustomerPlan(plan_id=plan_db.id, customer_id=customer_db.id, status=plan_status)
+    session.add(customer_plan_db)
+    session.commit()
+    session.refresh(customer_plan_db)
+
+    return customer_plan_db
+
+@router.get("/customers/plans/", response_model=list[CustomerPlan], status_code=status.HTTP_200_OK, tags=["customers"])
+async def list_customer_plans(session: SessionDep) -> list[CustomerPlan]:
+    '''
+    Retorna una lista de todos los planes en la base de datos.
+    * Parámetros:
+        - customer_plan_db; La sesión de base de datos.
+    * Retorna:
+        - Una lista de planes
+    '''
+    customer_plan_db = session.exec(select(CustomerPlan)).all()
+    if len(customer_plan_db) == 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No se encontraron planes")
+    return customer_plan_db
+
+@router.get("/customers/{customer_id}/plans/", response_model=list[CustomerPlan], status_code=status.HTTP_200_OK, tags=["customers"])
+async def list_customer_plans(customer_id: int, session: SessionDep, plan_status: StatusEnum = Query()) -> list[CustomerPlan]:
+    query = (
+        select(CustomerPlan)
+        .where(CustomerPlan.customer_id == customer_id)
+        .where(CustomerPlan.status == plan_status)
+    )
+    
+    customer_plan_db = session.exec(query).all()
+    if not customer_plan_db:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No se encuentran planes activos asociados al cliente con el id {customer_id}")
+    return customer_plan_db
+
+
+    
