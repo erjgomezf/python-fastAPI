@@ -10,7 +10,7 @@ router = APIRouter()
 
 
 # Crear un cliente
-@router.post("/customers/", response_model=Customer, tags=["customers"])
+@router.post("/customers/", response_model=Customer, tags=["customers"], status_code=status.HTTP_201_CREATED)
 async def create_customer(customer_data: CustomerCreate, session: SessionDep) -> Customer:
     '''
     Crea un nuevo cliente en la base de datos.

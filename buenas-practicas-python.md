@@ -43,6 +43,7 @@ Nuestra base es el código limpio y el diseño sólido. Estos son nuestros pilar
   - Usar `-` para listar los elementos dentro de cada sección.
 
 - **Ejemplo práctico:**
+
   ```python
   class MiVista(APIView):
       """Vista para gestionar los perfiles de usuario."""
@@ -83,6 +84,9 @@ Para mantener un proyecto FastAPI organizado, escalable y fácil de mantener, se
 │       ├── customer.py
 │       ├── invoices.py
 │       └── transactions.py
+│   └── test/
+│       ├── __init__.py
+│       └── test_customer.py
 ├── models.py
 ├── db.py
 └── requirements.txt
@@ -242,31 +246,33 @@ Si un usuario excede el límite, recibirá una respuesta `HTTP 429 Too Many Requ
 
 Genera documentación OpenAPI 3.0 (Swagger UI, Redoc) a partir de tu código.
 
-1.  `pip install drf-spectacular`
-2.  Añadir `drf_spectacular` a `INSTALLED_APPS`.
-3.  En `settings.py`:
-    ```python
-    REST_FRAMEWORK = {
-        "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-    }
-    SPECTACULAR_SETTINGS = {
-        "TITLE": "API del Curso DRF",
-        "DESCRIPTION": "Documentación interactiva de la API",
-        "VERSION": "1.0.0",
-    }
-    ```
-4.  En el `urls.py` del proyecto, añade las rutas para la UI:
+1. `pip install drf-spectacular`
+2. Añadir `drf_spectacular` a `INSTALLED_APPS`.
+3. En `settings.py`:
 
-    ```python
-    from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+   ```python
+   REST_FRAMEWORK = {
+       "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+   }
+   SPECTACULAR_SETTINGS = {
+       "TITLE": "API del Curso DRF",
+       "DESCRIPTION": "Documentación interactiva de la API",
+       "VERSION": "1.0.0",
+   }
+   ```
 
-    urlpatterns = [
-        # ...
-        path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
-        path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
-        path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
-    ]
-    ```
+4. En el `urls.py` del proyecto, añade las rutas para la UI:
+
+   ```python
+   from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+
+   urlpatterns = [
+       # ...
+       path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+       path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+       path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
+   ]
+   ```
 
 ---
 
@@ -314,9 +320,9 @@ results = session.exec(query).all()
 WHERE customerplan.customer_id = ? AND customerplan.status = ?
 ```
 
-#### Condiciones Complejas con and* y or*
+#### Condiciones Complejas con _and_ y _or_
 
-Para consultas que requieren una lógica más compleja, como combinar condiciones AND y OR, puedes importar y usar and* y or* directamente desde sqlmodel.
+Para consultas que requieren una lógica más compleja, como combinar condiciones AND y OR, puedes importar y usar _and_ y _or_ directamente desde sqlmodel.
 
 ```python
 from sqlmodel import select, and_, or_
@@ -339,10 +345,10 @@ customer_plan_db_complex = session.exec(
 
 ### 6.1. Panorama y Adopción Progresiva
 
-1.  **Comenzar con MVT (Django) o una estructura simple en FastAPI.**
-2.  **Extraer a una Capa de Servicios:** Cuando las vistas/routers crecen, mueve la lógica de negocio a funciones o clases en un `services.py`. Esto mejora la reutilización y los tests.
-3.  **Introducir Arquitectura Hexagonal (Ports & Adapters):** Si el sistema depende de múltiples servicios externos (BDs, APIs, colas), define "puertos" (interfaces) para el dominio y crea "adaptadores" para las implementaciones concretas.
-4.  **Considerar DDD/Clean Architecture:** Para dominios de negocio muy complejos, donde las reglas y el lenguaje compartido son críticos.
+1. **Comenzar con MVT (Django) o una estructura simple en FastAPI.**
+2. **Extraer a una Capa de Servicios:** Cuando las vistas/routers crecen, mueve la lógica de negocio a funciones o clases en un `services.py`. Esto mejora la reutilización y los tests.
+3. **Introducir Arquitectura Hexagonal (Ports & Adapters):** Si el sistema depende de múltiples servicios externos (BDs, APIs, colas), define "puertos" (interfaces) para el dominio y crea "adaptadores" para las implementaciones concretas.
+4. **Considerar DDD/Clean Architecture:** Para dominios de negocio muy complejos, donde las reglas y el lenguaje compartido son críticos.
 
 | Aspecto           | MVT (Django)                      | MVC Clásico             | Hexagonal / Clean                                       | Service Layer Simple              |
 | ----------------- | --------------------------------- | ----------------------- | ------------------------------------------------------- | --------------------------------- |
