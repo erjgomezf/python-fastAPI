@@ -42,6 +42,34 @@ def test_read_customer(client):
     assert response_read.json()["email"] == customer_data["email"]
     assert response_read.json()["age"] == customer_data["age"]
     assert response_read.json()["id"] == customer_id
-    
 
+def test_update_customer(client):
+    '''
+    Test para actualizar un cliente por su ID.
+    '''
+    customer_data = {
+        "name": "John Doe",
+        "description": "This is a test customer",
+        "email": "prueba@prueba.com",
+        "age": 30
+    }
+    response = client.post("/customers/", json=customer_data)
+    assert response.status_code == status.HTTP_201_CREATED
     
+    customer_id: int  = response.json()["id"]
+    updated_customer_data = {
+        "name": "Jhon Updated"
+        }
+    
+    response_update = client.patch(f"/update_customers/{customer_id}", json=updated_customer_data)
+    
+    # 1. Verificar que el código de estado es 200 OK, no 201 CREATED.
+    assert response_update.status_code == status.HTTP_200_OK
+    
+    # 2. Verificar que los datos actualizados son correctos.
+    updated_response_data = response_update.json()
+    assert response_update.json()["name"] == updated_customer_data["name"]
+    assert response_update.json()["id"] == customer_id
+    # 3. (Opcional pero recomendado) Verificar que los otros datos no cambiaron.
+    assert updated_response_data["description"] == customer_data["description"]
+    assert updated_response_data["email"] == customer_data["email"]

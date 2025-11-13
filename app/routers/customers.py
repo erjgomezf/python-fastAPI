@@ -73,7 +73,7 @@ async def delete_customer(customer_id: int, session: SessionDep) -> dict:
     return {"detail":"OK"}
 
 # actualizar un cliente por su ID
-@router.patch("/update_customers/{customer_id}", response_model=Customer, status_code=status.HTTP_201_CREATED, tags=["customers"])
+@router.patch("/update_customers/{customer_id}", response_model=Customer, status_code=status.HTTP_200_OK, tags=["customers"])
 async def update_customer(customer_id: int, customer_data: CustomerUpdate, session: SessionDep) -> Customer:
     '''
     Actualiza un cliente por su ID.
@@ -83,7 +83,7 @@ async def update_customer(customer_id: int, customer_data: CustomerUpdate, sessi
     * Retorna:
         - El cliente actualizado.
     '''
-    customer_db = session.get(Customer, customer_id, tags=["customers"])
+    customer_db = session.get(Customer, customer_id)
     if not customer_db:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Cliente con ID {customer_id} no encontrado")
     customer_data_dict = customer_data.model_dump(exclude_unset=True) # Convertir CustomerUpdate a dict
